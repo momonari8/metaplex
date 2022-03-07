@@ -260,6 +260,9 @@ export async function uploadV2({
                       manifestBuffer,
                     );
                     break;
+                  case StorageType.Hidden:
+                    [link, imageLink] = [ hiddenSettings.uri, 'hidden' ];
+                    break;
                   case StorageType.Arweave:
                   default:
                     [link, imageLink] = await arweaveUpload(
@@ -273,7 +276,6 @@ export async function uploadV2({
                     );
                 }
                 if (link && imageLink) {
-                  log.debug('Updating cache for ', allIndexesInSlice[i]);
                   cacheContent.items[assetKey.index] = {
                     link,
                     name: manifest.name,

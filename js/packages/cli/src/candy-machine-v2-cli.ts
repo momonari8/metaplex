@@ -218,6 +218,13 @@ programCommand('upload')
   });
 
 programCommand('withdraw')
+  .argument(
+    '<candyMachineId>',
+    'Candy Machine ID',
+    val => {
+      return val;
+    },
+  )
   .option(
     '-d ,--dry',
     'Show Candy Machine withdraw amount without withdrawing.',
@@ -228,7 +235,7 @@ programCommand('withdraw')
     '-r, --rpc-url <string>',
     'custom rpc url since this is a heavy command',
   )
-  .action(async (directory, cmd) => {
+  .action(async (candyMachineId, options, cmd) => {
     const { keypair, env, dry, charity, charityPercent, rpcUrl } = cmd.opts();
     if (charityPercent < 0 || charityPercent > 100) {
       log.error('Charity percentage needs to be between 0 and 100');
@@ -247,11 +254,16 @@ programCommand('withdraw')
         },
       ],
     };
-    const machines: AccountAndPubkey[] = await getProgramAccounts(
+    let machines: AccountAndPubkey[] = await getProgramAccounts(
       anchorProgram.provider.connection,
       CANDY_MACHINE_PROGRAM_V2_ID.toBase58(),
       configOrCommitment,
     );
+    machines =  machines.filter(machine => machine.pubkey === candyMachineId);
+
+    log.info('Total Number of Candy Machine Config Accounts found: ' + machines.length)
+    log.info('candyMachineId: ' + candyMachineId)
+
     let t = 0;
     for (const cg in machines) {
       t += machines[cg].account.lamports;
@@ -380,6 +392,7 @@ programCommand('verify_upload')
           const name = fromUTF8Array([...thisSlice.slice(2, 34)]);
           const uri = fromUTF8Array([...thisSlice.slice(40, 240)]);
           const cacheItem = cacheContent.items[key];
+          log.info('name: ' + name + '..' + cacheItem.name + ' uri: ' + uri + '..' + cacheItem.link);
           if (!name.match(cacheItem.name) || !uri.match(cacheItem.link)) {
             //leaving here for debugging reasons, but it's pretty useless. if the first upload fails - all others are wrong
             /*log.info(
@@ -893,7 +906,8 @@ programCommand('get_all_mint_addresses').action(async (directory, cmd) => {
     return new PublicKey(it[0].mint).toBase58();
   });
 
-  console.log(JSON.stringify(addresses, null, 2));
+  // console.log(JSON.stringify(addresses, null, 2));
+  console.log(JSON.stringify(accountsByCreatorAddress, null, 2));
 });
 
 program

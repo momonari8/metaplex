@@ -172,6 +172,7 @@ export async function mintV2(
     mint.publicKey,
   );
 
+  console.log('candyMachineAddress: ' + candyMachineAddress);
   const candyMachine: any = await anchorProgram.account.candyMachine.fetch(
     candyMachineAddress,
   );

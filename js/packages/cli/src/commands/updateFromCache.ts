@@ -17,6 +17,7 @@ import {
   METADATA_SCHEMA,
   UpdateMetadataArgs,
 } from '../helpers/schema';
+import {deriveCandyMachineV2ProgramAddress} from "../helpers/accounts";
 
 const SIGNING_INTERVAL = 60 * 1000; //60s
 
@@ -62,12 +63,26 @@ export async function updateMetadataFromCache(
   cacheContent: any,
   newCacheContent: any,
 ) {
+
+  const candyMachineId = new PublicKey(candyMachineAddress);
+  const [candyMachineAddr] = await deriveCandyMachineV2ProgramAddress(
+    candyMachineId,
+  );
+
   const metadataByCandyMachine = await getAccountsByCreatorAddress(
-    candyMachineAddress,
+    candyMachineAddr.toBase58(),
     connection,
   );
+  const addresses = metadataByCandyMachine.map(it => {
+    return new PublicKey(it[0].mint).toBase58();
+  });
+  console.debug('addresses: ' + JSON.stringify(addresses, null, 2));
+
   const differences = {};
   for (let i = 0; i < Object.keys(cacheContent.items).length; i++) {
+    log.debug('i: ' + i);
+    log.debug('cacheContent.items[i].link: ' + cacheContent.items[i.toString()].link);
+    log.debug('newCacheContent.items[i].link: ' + newCacheContent.items[i.toString()].link);
     if (
       cacheContent.items[i.toString()].link !=
       newCacheContent.items[i.toString()].link
@@ -76,6 +91,7 @@ export async function updateMetadataFromCache(
         newCacheContent.items[i.toString()].link;
     }
   }
+  log.debug('differences: ' + JSON.stringify(differences));
   const toUpdate = metadataByCandyMachine.filter(
     m => !!differences[m[0].data.uri],
   );
